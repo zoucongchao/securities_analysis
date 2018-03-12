@@ -57,7 +57,7 @@ def candle_plot(code,num=22,start_index=0):
     #ax.set_title(title)
     return(plt)
 #复权数据蜡烛图********************************************************************************************    
-def candle_plot1(code,num=22,start_index=0):
+def candle_plot1(code,num,start_index):
     
     hist = pd.read_csv('D:/vn.py/vnpy-1.7.1/securities_analysis/data/'+code+'_qfq.csv')
     hist.index = hist.iloc[:,1]

@@ -9,6 +9,7 @@ from data_preprocess import Extract_Features
 
 path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'
 
+
 #获取开盘价*************************************************************************************************
 def get_open_price(code, date):
     '''

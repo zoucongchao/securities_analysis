@@ -1,15 +1,60 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 10 15:35:59 2018
+
+@author: Administrator
+"""
+import pymongo
+import json
+import tushare as ts
+from datetime import timedelta
+import datetime 
+import time
 import numpy as np
 from sklearn import preprocessing
 import os
 import numpy
-import tushare as ts
-import datetime
 import errno
 import shutil
-import time
+from candle_plot import candle_plot1
 
 path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'
+
+#下载历史价格*******************************************************************************************************
+def download_to_mongodb(code,ktype ='D',start='2013-01-04'):
+    """
+    下载股票的行情数据
+    :param code:股票代码
+    :param ktype:数据周期，默认为日线
+    """
+    mongo_url = '127.0.0.1:27017'
+    client = pymongo.MongoClient(mongo_url)
+    database = ktype + '_' + 'data'
+    conn = client[database]
+    collection = str(code) + '_qfq'
+    cursor = conn[collection]
+    # 查询数据库中已有数据的最后日期
+    cx = cursor.find(sort=[('date',pymongo.DESCENDING)])
+    
+    if cx.count():
+        last = cx[0]
+    else:
+        last = ''
+    #开始下载数据
+    if last:
+        start = datetime.date(*map(int, str(last['date']).split('-'))) + timedelta(days=1)
+        start = str(start)
+        
+    data = ts.get_k_data(code,start)
+    
+    if not data.empty:
+        # 创建date索引
+        cursor.ensure_index([('date',pymongo.ASCENDING)],unique=True)
+        cursor.insert(json.loads(data.to_json(orient='records')))
+        print '%s下载完成' %code
+        
+    else:
+        print '没有可更新数据%s' %code
 
 #下载财经新闻***********************************************************************
 def load_news_from_tushare(top=5,show_content=True):
@@ -71,6 +116,27 @@ def download_economy():
     
     #存款准备金率
     ts.get_rrr().to_csv(path + 'rrr.csv')
+    
+#加载历史数据********************************************************************************
+def load_from_mongodb(code,ktype ='D',start='2013-01-04'):
+    mongo_url = '127.0.0.1:27017'
+    client = pymongo.MongoClient(mongo_url)
+    database = ktype + '_' + 'data'
+    conn = client[database]
+    collection = str(code) + '_qfq'
+    cursor = conn[collection]
+    
+    queryArgs = {}
+    projectionFields = {'close':True,'date':True,'_id':False}
+    data = cursor.find(queryArgs,projectionFields)
+    close = []
+    date = []
+    for d in data:
+        d_close = d['close']
+        d_date = d['date']
+        close.append(d_close)
+        date.append(d_date)
+    return close,date
     
 #加载本地数据********************************************************************************************   
 def load_data(path):
@@ -548,13 +614,14 @@ def To_DL_datatype(code):
     :param code: 股票代码
     :return: X,y
     '''
-    dayline, date = load_data_from_tushare(path + str(code)+'.csv')
-    thirtydayline, dates = load_data_from_tushare(path + str(code) + '_M.csv')
+    dayline, date = load_from_mongodb(code,ktype ='D')
+    thirtydayline, dates = load_from_mongodb(code,ktype ='M')
     X = []
     y = []
     for i in range(0, len(dayline) - 8):
         dat = date[i].split('-')
         for j, word in enumerate(dates):
+            #startswith() 方法用于检查字符串是否是以指定子字符串开头
             if word.startswith(dat[0]+'-'+dat[1]):
                 index = j
         X.append(dayline[i:i+7]+thirtydayline[index-12:index])
@@ -562,10 +629,9 @@ def To_DL_datatype(code):
     return np.array(X), np.array(y)
 
     
-#洗牌********************************************************************************************
+#洗牌函数********************************************************************************************
 def shuffle_in_unison(a, b):
-    # courtsey http://stackoverflow.com/users/190280/josh-bleecher-snyder
-
+    
     assert len(a) == len(b)
     a = np.array(a)
     b = np.array(b)
@@ -586,9 +652,8 @@ def mkdir_p(path):
             pass
         else: raise
 
-#蜡烛图数据集***********************************************************************
+#蜡烛图数据集**********************************************************************************************
 def plot_Kline_imgs_for_X(code,days):
-    from candle_plot import candle_plot1
     data_path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'
     stock_path = os.path.join(data_path, code) + '_qfq.csv'
     stockFile = open(stock_path, 'rb').readlines()[1:]
@@ -603,9 +668,6 @@ def plot_Kline_imgs_for_X(code,days):
     if os.path.isdir(png_dir_down) is not True:
         mkdir_p(png_dir_down)
 
-    # 平均数暂时不取
-    # med = median([float(s.split(',')[3])-float(stockFile[i+1].split(',')[3]) for i, s in enumerate(stockFile[:-1])])
-    
     #days-1 因为序号起始从0开始，所以要-1
     for i, line in enumerate(stockFile[days-1:-3]):
         print "step"+str(i)+'/'+str(len(stockFile)-i-1)+"*"*20
@@ -624,22 +686,23 @@ def plot_Kline_imgs_for_X(code,days):
 
         down_rule1 = (nextday_close_price - today_close_price) / today_close_price <= -up_percent
         down_rule2 = (next3day_close_price - today_close_price) / today_close_price <= -up_percent*2
-
-        start = time.time()
+        
+        start_index=stockFile.index(line)+1
+        #start = time.time()
         if up_rule1 or up_rule2:
             # 放入上涨文件夹
-            fig = candle_plot1(code, days, start_index=stockFile.index(line)+1)
+            fig = candle_plot1(code, days, start_index)
             png_path = os.path.join(png_dir_up, code) + '_' + line.split(',')[1] + '.jpg'
             fig.savefig(png_path,  bbox_inches = 'tight', pad_inches = 0)  # facecolor=fig.get_facecolor(),
         elif down_rule1 or down_rule2:
             # 放入下跌
-            fig = candle_plot1(code, days, start_index=stockFile.index(line)+1)
+            fig = candle_plot1(code, days, start_index)
             png_path = os.path.join(png_dir_down, code) + '_' + line.split(',')[1] + '.jpg'
             fig.savefig(png_path, bbox_inches = 'tight', pad_inches = 0)
 
         # print 'time is ', time.time() - start
 #划分train和val 集合****************************************************************************************
-def prepare_Kline_imgs_for_X(code,days):
+def prepare_Kline_imgs_for_X(code):
     
     #data_path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'
     #stock_path = os.path.join(data_path, code) + '_qfq.csv'
@@ -689,9 +752,6 @@ def prepare_Kline_imgs_for_X(code,days):
 
     up_train = up_files[0:int(len(up_files) * percentage)-retain_testset]
     down_train = down_files[0:int(len(down_files) * percentage) - retain_testset]
-
-    #若用LSTM做预测,不能洗牌
-    #X_train, Y_train = shuffle_in_unison(X_train, Y_train)
 
     if retain_testset == 0:
         up_val = up_files[int(len(up_files) * percentage):]

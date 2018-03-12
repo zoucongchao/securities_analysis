@@ -26,6 +26,50 @@ class Extract_Features:
 
     def __init__(self):
         pass
+    
+    #计算上下行波动率因子*************************************************************
+    def duvol(self,code):
+        '''
+        :param code:股票代码
+        :returnfactor_vol_data: 上下行波动率
+        '''
+        hist_data = pd.read_csv(path + code + '_qfq.csv')
+        hist_data.index = hist_data['date']
+        
+        hist_data['daily_return'] = np.log(hist_data['close']/hist_data['close'].shift(1))
+        hist_data['three_month_mean'] = pd.rolling_mean(hist_data['daily_return'],60)
+        
+        daily_return = hist_data['daily_return']
+        three_month_mean =  hist_data['three_month_mean']
+        
+        up_vol_data = pd.DataFrame()
+        for i in range(len(daily_return)-120):
+            temp1 = daily_return[60+i:120+i]
+            temp2 = three_month_mean[60+i:120+i]
+            I_i = temp1 > temp2
+            up_temp = (((temp1-temp2)*(temp1-temp2))[I_i]).mean()
+            temp = {"vol_data":up_temp}
+            temp = pd.DataFrame(temp,['0'])
+            temp.index = [temp1.index[-1]]
+            #temp.index = [temp1.index[-1]]
+            up_vol_data = up_vol_data.append(temp)
+        
+        down_vol_data = pd.DataFrame()
+        for i in range(len(daily_return)-120):
+            temp1 = daily_return[60+i:120+i]
+            temp2 = three_month_mean[60+i:120+i]
+            I_i = temp1 < temp2
+            down_temp = (((temp1-temp2)*(temp1-temp2))[I_i]).mean()
+            temp = {"vol_data":down_temp}
+            temp = pd.DataFrame(temp,['0'])
+            temp.index = [temp1.index[-1]]
+            
+            down_vol_data = down_vol_data.append(temp)
+        
+        factor_vol_data = down_vol_data/up_vol_data
+        factor_vol_data = np.log(factor_vol_data)
+        return factor_vol_data
+    
     #将日期转化为星期*****************************************************************
     def parse_weekday(self, date):
         '''

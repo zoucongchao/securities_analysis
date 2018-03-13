@@ -42,7 +42,7 @@ X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 model = reg_lstm(19)
 model.fit(X_train,
           Y_train,
-          nb_epoch=1,
+          nb_epoch=200,
           batch_size=50,
           verbose=1,
           validation_split=0.1)

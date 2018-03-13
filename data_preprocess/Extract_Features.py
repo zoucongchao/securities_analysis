@@ -49,8 +49,8 @@ class Extract_Features:
             I_i = temp1 > temp2
             up_temp = (((temp1-temp2)*(temp1-temp2))[I_i]).mean()
             temp = {"vol_data":up_temp}
-            temp = pd.DataFrame(temp,['0'])
-            temp.index = [temp1.index[-1]]
+            temp = pd.DataFrame(temp,[temp1.index[-1]])
+            #temp.index = [temp1.index[-1]]
             #temp.index = [temp1.index[-1]]
             up_vol_data = up_vol_data.append(temp)
         
@@ -61,9 +61,8 @@ class Extract_Features:
             I_i = temp1 < temp2
             down_temp = (((temp1-temp2)*(temp1-temp2))[I_i]).mean()
             temp = {"vol_data":down_temp}
-            temp = pd.DataFrame(temp,['0'])
-            temp.index = [temp1.index[-1]]
-            
+            temp = pd.DataFrame(temp,[temp1.index[-1]])
+            #temp.index = [temp1.index[-1]]           
             down_vol_data = down_vol_data.append(temp)
         
         factor_vol_data = down_vol_data/up_vol_data

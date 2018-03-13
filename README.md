@@ -22,7 +22,7 @@
   
   CNN、RNN （基于keras实现）   
   
-  softmax regression （基于tensorflow实现）  
+  DNN、softmax regression （基于tensorflow实现）  
   
   linear regression （基于scikitlearn实现）  
   

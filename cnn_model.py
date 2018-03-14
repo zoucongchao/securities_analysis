@@ -14,6 +14,8 @@ from keras.layers import Convolution2D,MaxPooling2D
 from keras.layers import Activation,Dropout,Flatten,Dense
 from data_preprocess import load_data 
 from keras.preprocessing.image import ImageDataGenerator
+import warnings
+warnings.filterwarnings("ignore")
 
 code = '601336'
 data_path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'

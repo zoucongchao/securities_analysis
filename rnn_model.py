@@ -16,6 +16,8 @@ from back_test import estimate
 from visualization.plt_show import plt_show
 import os
 os.environ['THEANO_FLAGS'] = "device=cpu"
+import warnings
+warnings.filterwarnings("ignore")
 
 path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'
 code = '601336'
@@ -42,7 +44,7 @@ X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 model = reg_lstm(19)
 model.fit(X_train,
           Y_train,
-          nb_epoch=200,
+          nb_epoch=1,
           batch_size=50,
           verbose=1,
           validation_split=0.1)

@@ -16,6 +16,8 @@ from back_test import estimate
 from visualization.plt_show import plt_show
 import os
 os.environ['THEANO_FLAGS'] = "device=cpu"
+import warnings
+warnings.filterwarnings("ignore")
 
 path = 'D:/vn.py/vnpy-1.7.1/securities_analysis/data/'
 code = '601336'

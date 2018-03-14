@@ -10,6 +10,9 @@ from data_preprocess.load_data import *
 from data_preprocess.Extract_Features import Extract_Features
 from sklearn import preprocessing
 from algorithum.reg_mlp import dnn_mlp
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 code = '601336'

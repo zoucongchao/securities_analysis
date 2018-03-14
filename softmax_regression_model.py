@@ -11,6 +11,8 @@ from data_preprocess.load_data import *
 from data_preprocess.Extract_Features import Extract_Features
 from sklearn import preprocessing
 from algorithum.reg_softmax import softmax_regression
+import warnings
+warnings.filterwarnings("ignore")
 
 code = '601336'
 

@@ -1,4 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 11 11:43:36 2018
 
+@author: Administrator
+"""
 
 import numpy as np
 from sklearn.metrics import r2_score
